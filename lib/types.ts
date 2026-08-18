@@ -22,9 +22,14 @@ export interface Inquiry {
   guests?: number;
   adults?: number;
   children?: number;
+  seniors?: number;
   origin?: string;
   accommodation?: boolean;
   transport?: boolean;
+  accessibilityNeeds?: string;
+  requestedDurationOptions?: string[];
+  quotationRequested?: boolean;
+  recommendationRequested?: boolean;
   contactNumber?: string;
 }
 
