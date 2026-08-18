@@ -40,6 +40,23 @@ const monthMap: Record<string, number> = {
   dec: 12,
 };
 
+const countWords: Record<string, number> = {
+  one: 1,
+  two: 2,
+  three: 3,
+  four: 4,
+  five: 5,
+  six: 6,
+  seven: 7,
+  eight: 8,
+  nine: 9,
+  ten: 10,
+  eleven: 11,
+  twelve: 12,
+};
+
+const countToken = "(?:\\d{1,3}|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)";
+
 function normalize(text: string) {
   return text.toLowerCase().replace(/[.,!?]/g, " ").replace(/\s+/g, " ").trim();
 }
@@ -47,6 +64,17 @@ function normalize(text: string) {
 function wordBoundaryIncludes(text: string, keyword: string) {
   if (keyword.includes(" ")) return text.includes(keyword);
   return new RegExp(`(^|\\s)${keyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?=\\s|$)`, "i").test(text);
+}
+
+function countFromToken(token?: string) {
+  if (!token) return undefined;
+  if (/^\d+$/.test(token)) return Number(token);
+  return countWords[token.toLowerCase()];
+}
+
+function extractCount(text: string, labels: string) {
+  const match = text.match(new RegExp(`\\b(${countToken})\\s*(?:${labels})\\b`, "i"));
+  return countFromToken(match?.[1]);
 }
 
 export function matchFaq(input: string, faqItems: FaqItem[]) {
@@ -100,14 +128,18 @@ export function extractInquiry(input: string): Partial<Inquiry> {
   else if (text.includes("panglao")) patch.destination = "Panglao";
   else if (text.includes("cebu tour")) patch.destination = "Cebu";
 
-  const guests = text.match(/\b(\d{1,3})\s*(?:pax|people|persons|guests?|travellers?|travelers?)\b/);
-  const adults = text.match(/\b(\d{1,3})\s*adults?\b/);
-  const children = text.match(/\b(\d{1,3})\s*(?:children|child|kids?|bata)\b/);
-  if (guests) patch.guests = Number(guests[1]);
-  if (adults) patch.adults = Number(adults[1]);
-  if (children) patch.children = Number(children[1]);
-  if (patch.adults !== undefined || patch.children !== undefined) {
-    patch.guests = Number(patch.adults ?? 0) + Number(patch.children ?? 0);
+  const explicitGuests = extractCount(text, "pax|people|persons|guests?|travellers?|travelers?");
+  const adults = extractCount(text, "adults?");
+  const children = extractCount(text, "children|child|kids?|kid|bata");
+  const seniors = extractCount(text, "seniors?|senior citizens?|elderly");
+
+  if (explicitGuests !== undefined) patch.guests = explicitGuests;
+  if (adults !== undefined) patch.adults = adults;
+  if (children !== undefined) patch.children = children;
+  if (seniors !== undefined) patch.seniors = seniors;
+
+  if (adults !== undefined || children !== undefined || seniors !== undefined) {
+    patch.guests = Number(adults ?? 0) + Number(children ?? 0) + Number(seniors ?? 0);
   }
 
   if (text.includes("from cebu") || text.includes("gikan cebu") || text.includes("coming from cebu")) patch.origin = "Cebu";
@@ -116,6 +148,20 @@ export function extractInquiry(input: string): Partial<Inquiry> {
 
   if (/\b(hotel|accommodation|room|resort|overnight)\b/.test(text)) patch.accommodation = true;
   if (/\b(airport|seaport|pickup|pick up|transfer|van|transport|sundo)\b/.test(text)) patch.transport = true;
+
+  if (/\blimited mobility\b/.test(text)) patch.accessibilityNeeds = "Limited mobility";
+  else if (/\bwheelchair(?: access| accessible| user)?\b/.test(text)) patch.accessibilityNeeds = "Wheelchair accessibility";
+  else if (/\b(difficulty walking|walking difficulty|mobility assistance|accessibility assistance)\b/.test(text)) patch.accessibilityNeeds = "Mobility assistance";
+
+  const durationOptions = Array.from(input.matchAll(/\b(\d{1,2}d\d{1,2}n)\b/gi)).map((match) => match[1].toUpperCase());
+  if (durationOptions.length) patch.requestedDurationOptions = [...new Set(durationOptions)];
+
+  if (/\b(recommend|recommendation|suggest|which is better|which would be better|better for us|best option|best for us)\b/.test(text)) {
+    patch.recommendationRequested = true;
+  }
+  if (/\b(estimated|estimate|quotation|quote|total package cost|package cost|total cost|pricing|price|how much)\b/.test(text)) {
+    patch.quotationRequested = true;
+  }
 
   const phone = input.match(/(?:\+63|0)9\d{9}/);
   if (phone) patch.contactNumber = phone[0];
@@ -135,7 +181,7 @@ function missingQualification(inquiry: Inquiry) {
 function qualificationQuestion(field: ReturnType<typeof missingQualification>) {
   if (field === "destination") return "Which destination are you interested in?";
   if (field === "travelDate") return "What date are you planning to travel?";
-  if (field === "guests") return "How many guests will be traveling? You can also specify adults and children.";
+  if (field === "guests") return "How many guests will be traveling? You can also specify adults, children, and seniors.";
   return "";
 }
 
@@ -170,6 +216,49 @@ function statusFrom(inquiry: Inquiry, currentIntent: string | undefined, needsHu
   return "new";
 }
 
+function isComplexAdvisoryRequest(inquiry: Inquiry) {
+  const recommendation = Boolean(inquiry.recommendationRequested);
+  const quotation = Boolean(inquiry.quotationRequested);
+  const accessibility = Boolean(inquiry.accessibilityNeeds);
+  const multipleDurations = (inquiry.requestedDurationOptions?.length ?? 0) >= 2;
+  return (recommendation && (quotation || accessibility || multipleDurations)) || (quotation && accessibility);
+}
+
+function formatTravelDate(value?: string) {
+  if (!value) return undefined;
+  const date = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat("en-PH", { month: "long", day: "numeric", year: "numeric" }).format(date);
+}
+
+function partySummary(inquiry: Inquiry) {
+  const parts: string[] = [];
+  if (inquiry.adults !== undefined) parts.push(`${inquiry.adults} adult${inquiry.adults === 1 ? "" : "s"}`);
+  if (inquiry.children !== undefined) parts.push(`${inquiry.children} ${inquiry.children === 1 ? "child" : "children"}`);
+  if (inquiry.seniors !== undefined) parts.push(`${inquiry.seniors} senior${inquiry.seniors === 1 ? "" : "s"}`);
+  if (inquiry.guests && parts.length) return `${inquiry.guests} travelers (${parts.join(", ")})`;
+  if (inquiry.guests) return `${inquiry.guests} travelers`;
+  return undefined;
+}
+
+function complexAdvisoryReply(inquiry: Inquiry) {
+  const captured: string[] = [];
+  if (inquiry.origin) captured.push(`origin from ${inquiry.origin}`);
+  if (inquiry.destination) captured.push(`${inquiry.destination} trip`);
+  const date = formatTravelDate(inquiry.travelDate);
+  if (date) captured.push(`travel on ${date}`);
+  const party = partySummary(inquiry);
+  if (party) captured.push(party);
+  if (inquiry.transport) captured.push("airport/transport pickup requested");
+  if (inquiry.accommodation) captured.push("accommodation requested");
+  if (inquiry.accessibilityNeeds) captured.push(`${inquiry.accessibilityNeeds.toLowerCase()} noted`);
+  if (inquiry.requestedDurationOptions?.length) captured.push(`comparing ${inquiry.requestedDurationOptions.join(" and ")}`);
+
+  const summary = captured.length ? `I’ve captured: ${captured.join("; ")}.` : "I’ve captured the details you provided.";
+
+  return `${summary}\n\nThis needs a human review because the best trip length depends on itinerary pacing and accessibility, while an estimated total cost depends on Arjam’s approved rates and inclusions. I don’t want to guess either one. I’ll mark this for an Arjam representative to recommend the better option and prepare an accurate quotation.`;
+}
+
 export function createBotResult(
   input: string,
   conversation: Pick<Conversation, "inquiry" | "intent" | "status">,
@@ -177,9 +266,20 @@ export function createBotResult(
 ): BotResult {
   const inquiryPatch = extractInquiry(input);
   const mergedInquiry = { ...conversation.inquiry, ...inquiryPatch };
+
+  if (isComplexAdvisoryRequest(mergedInquiry)) {
+    return {
+      text: complexAdvisoryReply(mergedInquiry),
+      intent: "complex_itinerary_quote",
+      handoff: true,
+      inquiryPatch,
+      status: "needs_human",
+    };
+  }
+
   let faq = matchFaq(input, faqItems);
   const normalizedInput = normalize(input);
-  const guestCountOnly = /^\d{1,3}\s*(?:pax|people|persons|guests?|travellers?|travelers?)$/.test(normalizedInput);
+  const guestCountOnly = new RegExp(`^${countToken}\\s*(?:pax|people|persons|guests?|travellers?|travelers?)$`, "i").test(normalizedInput);
   if (faq?.intent === "group_booking" && conversation.intent && guestCountOnly) faq = null;
   const intent = faq?.intent ?? conversation.intent;
 
@@ -223,7 +323,7 @@ export function createBotResult(
     if (!missing) {
       return {
         text:
-          "Thanks. I’ve captured the destination, travel date, and guest count. Your inquiry is now marked as qualified for the Arjam team. You can still send accommodation, pickup, or other preferences.",
+          "Thanks. I’ve captured the destination, travel date, and guest count. Your inquiry is now marked as qualified for the Arjam team. You can still send accommodation, pickup, accessibility, or other preferences.",
         intent,
         inquiryPatch,
         status: "qualified",
