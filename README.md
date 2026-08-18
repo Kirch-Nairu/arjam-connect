@@ -1,100 +1,119 @@
 # Arjam Connect
 
-Presentation-grade minimum working prototype for **Arjam Travel & Tours**.
+Minimum working prototype for **Arjam Travel & Tours**.
 
 Arjam Connect demonstrates how customer inquiries from Facebook Messenger, Instagram, and TikTok can be normalized into one travel inquiry workspace with automated FAQ handling, structured lead qualification, and human agent takeover.
 
-## Prototype boundary
+## What is working
 
-This repository deliberately separates **working application behavior** from **production social API authorization**.
-
-Working in this prototype:
-
-- role-based demo login
-- Arjam client operations dashboard
-- unified inbox with search and workflow filters
-- simulated Messenger, Instagram, and TikTok inbound conversations
-- 18 editable FAQ categories
-- conversational FAQ matching
-- multi-turn travel inquiry qualification
-- destination, travel date, guest count, origin, accommodation, transport, and phone extraction
-- qualified lead state
-- human-agent handoff and return to automation
+- Arjam workspace and Demo Customer login
+- unified inbox
+- simulated Messenger, Instagram, and TikTok conversations
+- 18 editable FAQ responses
+- stateful multi-turn chatbot qualification
+- destination, date, guest count, origin, accommodation, transport, and phone extraction
+- qualified inquiry status
+- human takeover and return to assistant
 - customer directory
-- inquiry analytics
-- cross-window live synchronization using `BroadcastChannel` + browser storage events
-- deterministic seeded demo reset
+- shared LAN state hosted by the laptop
 
-Not represented as production-ready:
+## LAN demo architecture
 
-- Meta production authorization
-- TikTok Business Messaging production authorization
-- real customer data persistence
-- production authentication
-- payment processing
-- booking confirmation
-- live package inventory
+The laptop is the server and the single source of truth.
+
+```text
+Phone / Demo Customer
+        │
+        │  Wi-Fi / LAN
+        ▼
+http://LAPTOP-IP:3000
+        │
+        ▼
+Next.js /api/state
+        │
+        ├── chatbot engine
+        ├── FAQ knowledge
+        └── data/arjam-state.json
+        │
+        ▼
+Laptop / Arjam Workspace
+```
+
+Unlike the earlier browser-only prototype, conversations are no longer stored separately in each device's `localStorage`. Both the phone and laptop read and write the same state through the laptop API.
 
 ## Demo accounts
 
-### Arjam Operations
+### Arjam workspace
 
 - Email: `arjam@demo.local`
 - Password: `arjam2026`
 
-### Demo Tester
+### Demo customer
 
 - Email: `tester@demo.local`
 - Password: `demo2026`
 
-The login screen also provides a one-click seeded demo access option.
+## Run on the laptop for LAN access
 
-## Recommended client demo
+Install and build once:
 
-1. Open **Arjam Operations** in one browser window.
-2. Open **Demo Tester** in a second window.
-3. Start a TikTok simulation.
-4. Send: `Hi, how much is a Bohol package?`
-5. Send: `5 pax`
-6. Send: `September 20`
-7. Show the Arjam inbox automatically capturing and qualifying the inquiry.
-8. From the tester, send: `I want to speak with a human agent.`
-9. Show **Needs human** on the Arjam side.
-10. Click **Take over**, reply from Arjam, and show that response on the tester side.
+```powershell
+cd D:\arjam-connect
+npm install
+npm run build
+```
+
+Start the production server on all network interfaces:
+
+```powershell
+npm run start -- -H 0.0.0.0
+```
+
+Find the laptop IPv4 address:
+
+```powershell
+ipconfig
+```
+
+If the laptop address is `192.168.1.25`, use:
+
+- Laptop Arjam workspace: `http://localhost:3000/arjam?auto=1`
+- Phone Demo Customer: `http://192.168.1.25:3000/demo?auto=1`
+
+Both devices must be connected to the same LAN or Wi-Fi network.
+
+If Windows Firewall blocks the phone, run PowerShell as Administrator:
+
+```powershell
+New-NetFirewallRule -DisplayName "Arjam Connect 3000" -Direction Inbound -Protocol TCP -LocalPort 3000 -Action Allow
+```
+
+## Recommended live demonstration
+
+1. Keep the Arjam workspace open on the laptop.
+2. Connect the phone to the same Wi-Fi/LAN.
+3. Open the phone using `http://<LAPTOP-IP>:3000/demo?auto=1`.
+4. Start a TikTok conversation.
+5. Send: `Hi, how much is a Bohol package?`
+6. Send: `5 pax`
+7. Send: `September 20`
+8. Show the laptop inbox receiving the same conversation and marking the inquiry as qualified.
+9. Send from the phone: `I want to speak with a human agent.`
+10. On the laptop, click **Take over** and reply manually.
+11. Show the agent reply appearing on the phone.
 
 ## Stack
 
 - Next.js 16
 - React 19
 - TypeScript
-- CSS design system with no external UI dependency
-- browser-local prototype persistence
+- Next.js Route Handler API
+- laptop-owned JSON demo persistence
+- deterministic FAQ/chatbot engine
+- polling-based LAN synchronization
 
-## Run locally
+## Prototype boundary
 
-```bash
-npm install
-npm run dev
-```
+The social channels are simulated transport adapters. The chatbot, inquiry state, shared LAN data, FAQ editing, qualification flow, inbox, and human handoff are functional.
 
-Then open `http://localhost:3000`.
-
-## Architecture direction
-
-The prototype uses one normalized conversation model. Production channel adapters can later map Meta and TikTok webhook events into that model without rewriting the inbox, chatbot workflow, or customer state.
-
-```text
-Messenger / Instagram / TikTok
-             │
-      channel adapters
-             │
-             ▼
- normalized conversation model
-             │
-     ┌───────┼────────┐
-     ▼       ▼        ▼
-  inbox   chatbot   inquiry
-                   workflow
-```
-
-For production, replace browser persistence with a server-side store such as PostgreSQL/Supabase, replace demo authentication with real Auth/RBAC, and connect approved social messaging adapters.
+Production work would replace the JSON demo store with PostgreSQL/Supabase, replace demo authentication with real Auth/RBAC, and connect approved Meta and TikTok messaging APIs.
