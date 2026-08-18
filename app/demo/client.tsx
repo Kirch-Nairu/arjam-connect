@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { quickSignIn, readSession, signOut } from "@/lib/auth";
 import { createDemoConversation, sendCustomerMessage, subscribeState } from "@/lib/remote-store";
 import { Conversation, Platform } from "@/lib/types";
@@ -25,6 +25,7 @@ const moreQuestions = [
   "What do you need for a quotation?",
   "Can children join the tour?",
   "Can I reschedule my travel date?",
+  "Hi, we’re coming from Cebu on September 27. We’re 7 adults, 2 kids, and one senior with limited mobility. We need airport pickup, accommodation, and a Bohol countryside tour. Can you recommend whether 3D2N or 4D3N would be better for us and give an estimated total package cost?",
 ];
 
 function formatTime(iso: string) {
@@ -38,6 +39,7 @@ export default function DemoTesterPage() {
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [conversation, setConversation] = useState<Conversation | null>(null);
   const [draft, setDraft] = useState("");
+  const messageEndRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     let session = readSession();
@@ -53,6 +55,10 @@ export default function DemoTesterPage() {
       setConversation(state.conversations.find((item) => item.id === conversationId) ?? null);
     });
   }, [conversationId, router]);
+
+  useEffect(() => {
+    messageEndRef.current?.scrollIntoView({ block: "end" });
+  }, [conversation?.messages.length]);
 
   const handler = useMemo(() => {
     if (!conversation) return "Arjam Assistant";
@@ -110,6 +116,7 @@ export default function DemoTesterPage() {
               const customer = message.sender === "customer";
               return <div className={customer ? "customer-message-row mine" : "customer-message-row"} key={message.id}><div>{message.text}</div><small>{customer ? "You" : message.sender === "agent" ? "Arjam Agent" : "Arjam Assistant"} · {formatTime(message.createdAt)}</small></div>;
             })}
+            <div ref={messageEndRef} />
           </div>
           <div className="customer-composer-clean">
             <textarea rows={1} value={draft} disabled={!conversation} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); void send(); } }} placeholder={conversation ? "Message Arjam Travel & Tours" : "Start a conversation first"} />
