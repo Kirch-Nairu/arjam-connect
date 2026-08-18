@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { quickSignIn, readSession, signOut } from "@/lib/auth";
 import {
   markConversationRead,
@@ -30,6 +30,21 @@ function formatDate(iso?: string) {
   if (!iso) return "Not provided";
   const value = iso.length === 10 ? `${iso}T00:00:00` : iso;
   return new Intl.DateTimeFormat("en-PH", { month: "short", day: "numeric", year: "numeric" }).format(new Date(value));
+}
+
+function formatParty(inquiry: Conversation["inquiry"]) {
+  const parts: string[] = [];
+  if (inquiry.adults !== undefined) parts.push(`${inquiry.adults} adult${inquiry.adults === 1 ? "" : "s"}`);
+  if (inquiry.children !== undefined) parts.push(`${inquiry.children} ${inquiry.children === 1 ? "child" : "children"}`);
+  if (inquiry.seniors !== undefined) parts.push(`${inquiry.seniors} senior${inquiry.seniors === 1 ? "" : "s"}`);
+  return parts.length ? parts.join(" · ") : "Not provided";
+}
+
+function formatServices(inquiry: Conversation["inquiry"]) {
+  const services: string[] = [];
+  if (inquiry.transport) services.push("Pickup / transport");
+  if (inquiry.accommodation) services.push("Accommodation");
+  return services.length ? services.join(" · ") : "Not provided";
 }
 
 export default function ArjamDashboard() {
@@ -127,10 +142,16 @@ function DashboardView({ conversations, metrics, onOpen }: { conversations: Conv
 function SummaryCard({ label, value, attention = false }: { label: string; value: number; attention?: boolean }) { return <div className={attention ? "summary-card attention" : "summary-card"}><span>{label}</span><strong>{value}</strong></div>; }
 
 function InboxView({ conversations, active, activeId, search, filter, draft, onSearch, onFilter, onSelect, onDraft, onSend, onTakeover, onStatus }: { conversations: Conversation[]; active: Conversation | null; activeId: string | null; search: string; filter: InboxFilter; draft: string; onSearch: (value: string) => void; onFilter: (value: InboxFilter) => void; onSelect: (id: string) => void; onDraft: (value: string) => void; onSend: () => void; onTakeover: (id: string, takeover: boolean) => void; onStatus: (id: string, status: ConversationStatus) => void; }) {
+  const messageEndRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    messageEndRef.current?.scrollIntoView({ block: "end" });
+  }, [active?.id, active?.messages.length]);
+
   return <div className="inbox-grid-clean">
     <aside className="thread-list"><div className="thread-tools"><input value={search} onChange={(event) => onSearch(event.target.value)} placeholder="Search conversations" /><div className="thread-filters">{(["all", "unread", "human"] as InboxFilter[]).map((item) => <button key={item} className={filter === item ? "active" : ""} onClick={() => onFilter(item)}>{item === "human" ? "Needs human" : item.charAt(0).toUpperCase() + item.slice(1)}</button>)}</div></div><div className="threads">{conversations.map((conversation) => <button key={conversation.id} className={activeId === conversation.id ? "thread active" : "thread"} onClick={() => onSelect(conversation.id)}><span className={`platform-chip ${conversation.platform}`}>{platformShort[conversation.platform]}</span><span className="thread-copy"><span><b>{conversation.customerName}</b><time>{formatTime(conversation.updatedAt)}</time></span><small>{conversation.messages.at(-1)?.text}</small><em>{statusLabel[conversation.status]}</em></span>{conversation.unread && <i className="unread-indicator" />}</button>)}{conversations.length === 0 && <div className="empty-state">No conversations found.</div>}</div></aside>
-    <section className="conversation-clean">{!active ? <div className="empty-state large">Select a conversation.</div> : <><header className="conversation-clean-header"><div><h2>{active.customerName}</h2><p>{platformLabel[active.platform]} · {active.botEnabled ? "Assistant active" : "Human agent active"}</p></div><button className={active.botEnabled ? "btn btn-secondary" : "btn btn-primary"} onClick={() => onTakeover(active.id, active.botEnabled)}>{active.botEnabled ? "Take over" : "Return to assistant"}</button></header><div className="message-list-clean">{active.messages.map((message) => { if (message.sender === "system") return <div className="system-line" key={message.id}>{message.text}</div>; const outgoing = message.sender !== "customer"; return <div className={outgoing ? "message-clean outgoing" : "message-clean"} key={message.id}><div>{message.text}</div><small>{message.sender === "customer" ? active.customerName : message.sender === "bot" ? "Arjam Assistant" : "Arjam Agent"} · {formatTime(message.createdAt)}</small></div>; })}</div><div className="reply-box"><textarea rows={2} value={draft} onChange={(event) => onDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); onSend(); } }} disabled={active.botEnabled} placeholder={active.botEnabled ? "Take over this conversation to reply manually." : "Reply to customer"} /><button className="btn btn-primary" disabled={active.botEnabled || !draft.trim()} onClick={onSend}>Send</button></div></>}</section>
-    <aside className="conversation-details-clean">{active && <><div className="customer-summary"><div className="customer-avatar">{active.customerName.split(" ").map((part) => part[0]).slice(0, 2).join("")}</div><h3>{active.customerName}</h3><p>{active.customerHandle}</p></div><label className="status-field">Status<select value={active.status} onChange={(event) => onStatus(active.id, event.target.value as ConversationStatus)}>{(Object.keys(statusLabel) as ConversationStatus[]).map((status) => <option key={status} value={status}>{statusLabel[status]}</option>)}</select></label><div className="detail-group"><Detail label="Channel" value={platformLabel[active.platform]} /><Detail label="Destination" value={active.inquiry.destination ?? "Not provided"} /><Detail label="Travel date" value={formatDate(active.inquiry.travelDate)} /><Detail label="Guests" value={active.inquiry.guests?.toString() ?? "Not provided"} /><Detail label="Origin" value={active.inquiry.origin ?? "Not provided"} /><Detail label="Assigned to" value={active.assignedTo ?? "Assistant"} /></div></>}</aside>
+    <section className="conversation-clean">{!active ? <div className="empty-state large">Select a conversation.</div> : <><header className="conversation-clean-header"><div><h2>{active.customerName}</h2><p>{platformLabel[active.platform]} · {active.botEnabled ? "Assistant active" : "Human agent active"}</p></div><button className={active.botEnabled ? "btn btn-secondary" : "btn btn-primary"} onClick={() => onTakeover(active.id, active.botEnabled)}>{active.botEnabled ? "Take over" : "Return to assistant"}</button></header><div className="message-list-clean">{active.messages.map((message) => { if (message.sender === "system") return <div className="system-line" key={message.id}>{message.text}</div>; const outgoing = message.sender !== "customer"; return <div className={outgoing ? "message-clean outgoing" : "message-clean"} key={message.id}><div>{message.text}</div><small>{message.sender === "customer" ? active.customerName : message.sender === "bot" ? "Arjam Assistant" : "Arjam Agent"} · {formatTime(message.createdAt)}</small></div>; })}<div ref={messageEndRef} /></div><div className="reply-box"><textarea rows={2} value={draft} onChange={(event) => onDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); onSend(); } }} disabled={active.botEnabled} placeholder={active.botEnabled ? "Take over this conversation to reply manually." : "Reply to customer"} /><button className="btn btn-primary" disabled={active.botEnabled || !draft.trim()} onClick={onSend}>Send</button></div></>}</section>
+    <aside className="conversation-details-clean">{active && <><div className="customer-summary"><div className="customer-avatar">{active.customerName.split(" ").map((part) => part[0]).slice(0, 2).join("")}</div><h3>{active.customerName}</h3><p>{active.customerHandle}</p></div><label className="status-field">Status<select value={active.status} onChange={(event) => onStatus(active.id, event.target.value as ConversationStatus)}>{(Object.keys(statusLabel) as ConversationStatus[]).map((status) => <option key={status} value={status}>{statusLabel[status]}</option>)}</select></label><div className="detail-group"><Detail label="Channel" value={platformLabel[active.platform]} /><Detail label="Destination" value={active.inquiry.destination ?? "Not provided"} /><Detail label="Travel date" value={formatDate(active.inquiry.travelDate)} /><Detail label="Guests" value={active.inquiry.guests?.toString() ?? "Not provided"} /><Detail label="Party" value={formatParty(active.inquiry)} /><Detail label="Origin" value={active.inquiry.origin ?? "Not provided"} /><Detail label="Services" value={formatServices(active.inquiry)} /><Detail label="Accessibility" value={active.inquiry.accessibilityNeeds ?? "Not provided"} /><Detail label="Trip options" value={active.inquiry.requestedDurationOptions?.join(" / ") ?? "Not provided"} /><Detail label="Quotation" value={active.inquiry.quotationRequested ? "Requested" : "Not requested"} /><Detail label="Assigned to" value={active.assignedTo ?? "Assistant"} /></div></>}</aside>
   </div>;
 }
 
