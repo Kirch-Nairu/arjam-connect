@@ -1,6 +1,1 @@
-@import "./styles/base.css";
-@import "./styles/admin.css";
-@import "./styles/inbox.css";
-@import "./styles/workspace.css";
-@import "./styles/tester.css";
-@import "./styles/responsive.css";
+@import "./styles/ui.css";
