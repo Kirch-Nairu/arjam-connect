@@ -4,14 +4,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { quickSignIn, readSession, signOut } from "@/lib/auth";
-import { createDemoConversation, readState, sendCustomerMessage, subscribeState } from "@/lib/store";
+import { createDemoConversation, sendCustomerMessage, subscribeState } from "@/lib/remote-store";
 import { Conversation, Platform } from "@/lib/types";
 
-const platformLabel: Record<Platform, string> = {
-  facebook: "Messenger",
-  instagram: "Instagram",
-  tiktok: "TikTok",
-};
+const platformLabel: Record<Platform, string> = { facebook: "Messenger", instagram: "Instagram", tiktok: "TikTok" };
 
 const starterQuestions = [
   "How much is a Bohol package?",
@@ -43,11 +39,6 @@ export default function DemoTesterPage() {
   const [conversation, setConversation] = useState<Conversation | null>(null);
   const [draft, setDraft] = useState("");
 
-  function refresh() {
-    if (!conversationId) return;
-    setConversation(readState().conversations.find((item) => item.id === conversationId) ?? null);
-  }
-
   useEffect(() => {
     let session = readSession();
     const auto = new URLSearchParams(window.location.search).get("auto") === "1";
@@ -56,7 +47,11 @@ export default function DemoTesterPage() {
       router.replace("/?role=tester");
       return;
     }
-    return subscribeState(refresh);
+
+    return subscribeState((state) => {
+      if (!conversationId) return;
+      setConversation(state.conversations.find((item) => item.id === conversationId) ?? null);
+    });
   }, [conversationId, router]);
 
   const handler = useMemo(() => {
@@ -64,19 +59,25 @@ export default function DemoTesterPage() {
     return conversation.botEnabled ? "Arjam Assistant" : "Arjam Agent";
   }, [conversation]);
 
-  function startConversation() {
-    const created = createDemoConversation(platform, customerName);
-    setConversationId(created.id);
-    setConversation(created);
-    setDraft("");
+  async function startConversation() {
+    try {
+      const created = await createDemoConversation(platform, customerName);
+      setConversationId(created.conversation.id);
+      setConversation(created.conversation);
+      setDraft("");
+    } catch {}
   }
 
-  function send(text = draft) {
+  async function send(text = draft) {
     const message = text.trim();
     if (!conversationId || !message) return;
-    sendCustomerMessage(conversationId, message);
     setDraft("");
-    refresh();
+    try {
+      const state = await sendCustomerMessage(conversationId, message);
+      setConversation(state.conversations.find((item) => item.id === conversationId) ?? null);
+    } catch {
+      setDraft(message);
+    }
   }
 
   function newConversation() {
@@ -85,96 +86,41 @@ export default function DemoTesterPage() {
     setDraft("");
   }
 
-  function logout() {
-    signOut();
-    router.push("/");
-  }
+  function logout() { signOut(); router.push("/"); }
 
   return (
     <main className="tester-clean">
       <header className="tester-clean-header">
-        <div className="workspace-brand">
-          <div className="logo-mark small">A</div>
-          <div><strong>Arjam Travel & Tours</strong><span>Customer demo</span></div>
-        </div>
-        <div>
-          <Link className="btn btn-secondary" href="/arjam?auto=1" target="_blank">Open Arjam workspace</Link>
-          <button className="text-link" onClick={logout}>Sign out</button>
-        </div>
+        <div className="workspace-brand"><div className="logo-mark small">A</div><div><strong>Arjam Travel & Tours</strong><span>Customer demo</span></div></div>
+        <div><Link className="btn btn-secondary" href="/arjam?auto=1" target="_blank">Open Arjam workspace</Link><button className="text-link" onClick={logout}>Sign out</button></div>
       </header>
 
       <section className="tester-clean-body">
         <div className="tester-controls-clean">
-          <label>
-            Customer name
-            <input value={customerName} onChange={(event) => setCustomerName(event.target.value)} disabled={Boolean(conversation)} />
-          </label>
-          <div className="platform-tabs-clean">
-            {(Object.keys(platformLabel) as Platform[]).map((item) => (
-              <button key={item} className={platform === item ? "active" : ""} disabled={Boolean(conversation)} onClick={() => setPlatform(item)}>{platformLabel[item]}</button>
-            ))}
-          </div>
-          {!conversation ? (
-            <button className="btn btn-primary" onClick={startConversation}>Start conversation</button>
-          ) : (
-            <button className="btn btn-secondary" onClick={newConversation}>New conversation</button>
-          )}
+          <label>Customer name<input value={customerName} onChange={(event) => setCustomerName(event.target.value)} disabled={Boolean(conversation)} /></label>
+          <div className="platform-tabs-clean">{(Object.keys(platformLabel) as Platform[]).map((item) => <button key={item} className={platform === item ? "active" : ""} disabled={Boolean(conversation)} onClick={() => setPlatform(item)}>{platformLabel[item]}</button>)}</div>
+          {!conversation ? <button className="btn btn-primary" onClick={() => void startConversation()}>Start conversation</button> : <button className="btn btn-secondary" onClick={newConversation}>New conversation</button>}
         </div>
 
         <section className="customer-chat-card">
-          <header className={`customer-chat-header ${platform}`}>
-            <div className="customer-chat-avatar">A</div>
-            <div><h1>Arjam Travel & Tours</h1><p>{platformLabel[platform]} · {handler}</p></div>
-          </header>
-
+          <header className={`customer-chat-header ${platform}`}><div className="customer-chat-avatar">A</div><div><h1>Arjam Travel & Tours</h1><p>{platformLabel[platform]} · {handler}</p></div></header>
           <div className="customer-chat-messages">
-            {!conversation ? (
-              <div className="chat-placeholder">
-                <div className="customer-chat-avatar large">A</div>
-                <h2>Start a conversation</h2>
-                <p>Select a channel above, then start the demo.</p>
-              </div>
-            ) : (
-              conversation.messages.map((message) => {
-                if (message.sender === "system") return <div className="system-line" key={message.id}>{message.text}</div>;
-                const customer = message.sender === "customer";
-                return (
-                  <div className={customer ? "customer-message-row mine" : "customer-message-row"} key={message.id}>
-                    <div>{message.text}</div>
-                    <small>{customer ? "You" : message.sender === "agent" ? "Arjam Agent" : "Arjam Assistant"} · {formatTime(message.createdAt)}</small>
-                  </div>
-                );
-              })
-            )}
+            {!conversation ? <div className="chat-placeholder"><div className="customer-chat-avatar large">A</div><h2>Start a conversation</h2><p>Select a channel above, then start the demo.</p></div> : conversation.messages.map((message) => {
+              if (message.sender === "system") return <div className="system-line" key={message.id}>{message.text}</div>;
+              const customer = message.sender === "customer";
+              return <div className={customer ? "customer-message-row mine" : "customer-message-row"} key={message.id}><div>{message.text}</div><small>{customer ? "You" : message.sender === "agent" ? "Arjam Agent" : "Arjam Assistant"} · {formatTime(message.createdAt)}</small></div>;
+            })}
           </div>
-
           <div className="customer-composer-clean">
-            <textarea
-              rows={1}
-              value={draft}
-              disabled={!conversation}
-              onChange={(event) => setDraft(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" && !event.shiftKey) {
-                  event.preventDefault();
-                  send();
-                }
-              }}
-              placeholder={conversation ? "Message Arjam Travel & Tours" : "Start a conversation first"}
-            />
-            <button className="btn btn-primary" disabled={!conversation || !draft.trim()} onClick={() => send()}>Send</button>
+            <textarea rows={1} value={draft} disabled={!conversation} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); void send(); } }} placeholder={conversation ? "Message Arjam Travel & Tours" : "Start a conversation first"} />
+            <button className="btn btn-primary" disabled={!conversation || !draft.trim()} onClick={() => void send()}>Send</button>
           </div>
         </section>
 
         <section className="prompt-section-clean">
           <div><h2>Try a common inquiry</h2><p>These are only shortcuts. You can type naturally in the chat.</p></div>
-          <div className="prompt-chips-clean">
-            {starterQuestions.map((question) => <button key={question} disabled={!conversation} onClick={() => send(question)}>{question}</button>)}
-          </div>
-          <details className="more-prompts-clean">
-            <summary>More test questions</summary>
-            <div>{moreQuestions.map((question) => <button key={question} disabled={!conversation} onClick={() => send(question)}>{question}</button>)}</div>
-          </details>
+          <div className="prompt-chips-clean">{starterQuestions.map((question) => <button key={question} disabled={!conversation} onClick={() => void send(question)}>{question}</button>)}</div>
+          <details className="more-prompts-clean"><summary>More test questions</summary><div>{moreQuestions.map((question) => <button key={question} disabled={!conversation} onClick={() => void send(question)}>{question}</button>)}</div></details>
         </section>
 
         <p className="tester-footnote">The social channel is simulated. The chatbot, inquiry state, handoff, and Arjam inbox are functional.</p>
