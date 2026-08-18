@@ -1,0 +1,52 @@
+@media (max-width: 1120px) {
+  .admin-shell { grid-template-columns: 196px minmax(0,1fr); }
+  .inbox-shell { grid-template-columns: minmax(250px, 310px) minmax(400px,1fr); }
+  .customer-context { display: none; }
+  .tester-grid { grid-template-columns: 250px minmax(380px,1fr); }
+  .scenario-panel { grid-column: 1 / -1; border-left: 0; border-top: 1px solid var(--line); }
+  .scenario-list { grid-template-columns: repeat(3,1fr); }
+}
+
+@media (max-width: 860px) {
+  .login-page { grid-template-columns: 1fr; }
+  .login-hero { min-height: auto; padding: 32px 26px 38px; }
+  .hero-copy { padding-top: 70px; }
+  .hero-copy h1 { font-size: 42px; }
+  .login-panel { min-height: auto; padding: 42px 24px 60px; }
+  .admin-shell { display: block; }
+  .admin-sidebar { position: fixed; width: 228px; left: -240px; transition: .2s; box-shadow: 12px 0 30px rgba(10,31,45,.18); }
+  .admin-sidebar.open { left: 0; }
+  .mobile-menu { display: block; }
+  .metric-grid { grid-template-columns: 1fr 1fr; }
+  .overview-two-col, .system-grid, .knowledge-layout { grid-template-columns: 1fr; }
+  .knowledge-policy { display: none; }
+  .inbox-shell { grid-template-columns: minmax(240px, 300px) minmax(380px,1fr); overflow-x: auto; }
+  .tester-grid { display: block; }
+  .simulation-panel, .scenario-panel { border: 0; border-bottom: 1px solid var(--line); }
+  .device-stage { min-height: 760px; }
+  .scenario-list { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 620px) {
+  .hero-proof { grid-template-columns: 1fr; gap: 0; }
+  .role-switch { grid-template-columns: 1fr; }
+  .admin-topbar { padding: 10px 13px; }
+  .topbar-actions .live-indicator { display: none; }
+  .workspace-content { padding: 16px 13px 28px; }
+  .welcome-strip, .knowledge-summary, .demo-banner, .reset-card { align-items: flex-start; flex-direction: column; }
+  .welcome-status { width: 100%; padding: 12px 0 0; border-top: 1px solid var(--line); border-left: 0; }
+  .metric-grid { grid-template-columns: 1fr 1fr; }
+  .channel-stat { grid-template-columns: 34px 1fr 38px; }
+  .channel-stat .mini-track { display: none; }
+  .inbox-shell { display: block; height: auto; }
+  .inbox-list-panel { min-height: calc(100vh - 76px); }
+  .conversation-panel { min-height: 720px; border-top: 1px solid var(--line); }
+  .message-row { width: 90%; }
+  .tester-topbar { padding: 9px 12px; }
+  .simulation-badge { display: none; }
+  .device-stage { padding: 18px 10px; }
+  .chat-device { height: 690px; min-height: 0; border-width: 5px; border-radius: 24px; }
+  .device-caption { padding: 0 4px; }
+  .scenario-panel, .simulation-panel { padding: 20px 14px; }
+  .editor-meta { grid-template-columns: 1fr; }
+}

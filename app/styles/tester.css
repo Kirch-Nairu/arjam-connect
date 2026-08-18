@@ -1,0 +1,103 @@
+/* Tester */
+.tester-shell { min-height: 100vh; background: #eef3f5; }
+.tester-topbar { display: flex; min-height: 68px; align-items: center; justify-content: space-between; gap: 20px; border-bottom: 1px solid var(--line); padding: 10px 24px; background: white; }
+.tester-brand { display: flex; align-items: center; gap: 10px; }
+.tester-brand strong, .tester-brand span { display: block; }
+.tester-brand strong { font-size: 12px; }
+.tester-brand span { margin-top: 2px; color: #81909a; font-size: 9px; }
+.tester-top-actions { display: flex; align-items: center; gap: 9px; }
+.simulation-badge { display: flex; align-items: center; gap: 7px; border-radius: 8px; padding: 8px 10px; color: #56707d; background: #f3f8f8; font-size: 9px; font-weight: 750; }
+.icon-button { width: 34px; height: 34px; border: 1px solid var(--line); border-radius: 9px; color: #697d89; background: white; cursor: pointer; }
+.tester-grid { min-height: calc(100vh - 68px); display: grid; grid-template-columns: minmax(250px, 300px) minmax(390px, 1fr) minmax(285px, 350px); }
+.simulation-panel, .scenario-panel { overflow-y: auto; padding: 24px 20px; background: white; }
+.simulation-panel { border-right: 1px solid var(--line); }
+.scenario-panel { border-left: 1px solid var(--line); }
+.simulation-panel h2, .scenario-panel h2, .device-caption h2 { margin: 0; font-size: 18px; letter-spacing: -.02em; }
+.simulation-panel > div:first-child > p:last-child, .scenario-panel > div:first-child > p:last-child { margin: 7px 0 0; color: var(--muted); font-size: 10px; line-height: 1.6; }
+.control-field { margin-top: 18px; }
+.platform-selector { display: grid; gap: 6px; }
+.platform-selector button { display: grid; grid-template-columns: 32px 1fr; align-items: center; gap: 9px; border: 1px solid var(--line); border-radius: 9px; padding: 8px; text-align: left; background: white; cursor: pointer; }
+.platform-selector button:disabled { cursor: default; opacity: .6; }
+.platform-selector button.active { border-color: #b8d9d5; background: #f8fcfb; box-shadow: 0 0 0 2px rgba(14,143,134,.05); }
+.platform-selector b { display: grid; width: 32px; height: 28px; place-items: center; border-radius: 7px; color: #486373; background: #edf3f5; font-size: 8px; text-transform: uppercase; }
+.platform-selector button.active.facebook b { color: #2462a8; background: #e9f1fc; }
+.platform-selector button.active.instagram b { color: #a83d72; background: #fbeaf2; }
+.platform-selector button.active.tiktok b { color: #1c2c35; background: #e9eef1; }
+.platform-selector span { font-size: 10px; font-weight: 700; }
+.simulation-panel > .button { margin-top: 16px; }
+.transport-card { display: grid; gap: 0; margin-top: 18px; border: 1px solid var(--line); border-radius: 10px; background: #fafcfd; }
+.transport-card > div { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 10px; border-bottom: 1px solid var(--line); }
+.transport-card > div:last-child { border-bottom: 0; }
+.transport-card span { color: #82919b; font-size: 8px; }
+.transport-card b { font-size: 8px; }
+.captured-context { margin-top: 17px; border-top: 1px solid var(--line); padding-top: 16px; }
+.captured-context > div { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 0; }
+.captured-context span { color: #83919a; font-size: 8px; }
+.captured-context b { font-size: 8px; text-align: right; text-transform: capitalize; }
+.device-stage { display: grid; place-items: center; align-content: center; padding: 25px; background:
+  radial-gradient(circle at 50% 25%, rgba(22,143,133,.08), transparent 25%),
+  linear-gradient(#f1f5f6, #e9eff1); }
+.device-caption { display: flex; width: min(100%, 500px); align-items: flex-end; justify-content: space-between; gap: 14px; margin-bottom: 13px; }
+.device-caption > span { color: #82919b; font-size: 9px; }
+.chat-device { position: relative; width: min(100%, 500px); height: min(740px, calc(100vh - 145px)); min-height: 560px; display: flex; flex-direction: column; overflow: hidden; border: 7px solid #172630; border-radius: 30px; background: #f7f9fa; box-shadow: var(--shadow-lg); }
+.device-notch { position: absolute; z-index: 5; width: 82px; height: 18px; left: 50%; top: 0; transform: translateX(-50%); border-radius: 0 0 13px 13px; background: #172630; }
+.chat-header { display: grid; min-height: 66px; grid-template-columns: 28px 38px 1fr 28px; align-items: center; gap: 8px; padding: 13px 12px 8px; color: white; background: var(--navy-2); }
+.chat-device.facebook .chat-header { background: #215e9f; }
+.chat-device.instagram .chat-header { background: linear-gradient(120deg, #803c78, #b34d6b); }
+.chat-device.tiktok .chat-header { background: #17232a; }
+.chat-header > button { border: 0; color: white; background: transparent; cursor: pointer; font-size: 19px; }
+.chat-avatar { display: grid; width: 38px; height: 38px; place-items: center; border-radius: 50%; color: white; background: linear-gradient(145deg, #22ab9f, #0c756e); font-size: 14px; font-weight: 850; }
+.chat-avatar.large { width: 62px; height: 62px; font-size: 22px; }
+.chat-header b, .chat-header span { display: block; }
+.chat-header b { font-size: 11px; }
+.chat-header span { display: flex; align-items: center; gap: 5px; margin-top: 3px; color: rgba(255,255,255,.7); font-size: 8px; }
+.chat-header span i { width: 6px; height: 6px; border-radius: 50%; background: #4fe2b8; }
+.chat-body { flex: 1; overflow-y: auto; padding: 16px 14px; background:
+  linear-gradient(rgba(249,251,252,.94), rgba(249,251,252,.94)),
+  radial-gradient(circle at 20% 20%, #dce6e9 1px, transparent 1px);
+  background-size: auto, 18px 18px;
+}
+.chat-empty { display: grid; height: 100%; place-items: center; align-content: center; text-align: center; }
+.chat-empty h3 { margin: 12px 0 0; font-size: 14px; }
+.chat-empty p { max-width: 300px; margin: 6px 0 0; color: #70828e; font-size: 10px; line-height: 1.6; }
+.chat-empty span { margin-top: 12px; border-radius: 99px; padding: 6px 9px; color: #66808c; background: #edf3f4; font-size: 8px; }
+.chat-date { width: fit-content; margin: 0 auto 13px; border-radius: 99px; padding: 5px 8px; color: #85949d; background: #e9eef0; font-size: 7px; text-transform: uppercase; }
+.chat-message { width: min(80%, 330px); margin: 0 0 11px; }
+.chat-message.customer { margin-left: auto; }
+.chat-message > div { border-radius: 5px 14px 14px 14px; padding: 9px 11px; color: #334a58; background: white; box-shadow: 0 2px 8px rgba(16,39,55,.08); font-size: 10px; line-height: 1.5; }
+.chat-message.customer > div { border-radius: 14px 5px 14px 14px; color: white; background: var(--teal); }
+.chat-device.facebook .chat-message.customer > div { background: #2872bc; }
+.chat-device.instagram .chat-message.customer > div { background: #a14370; }
+.chat-device.tiktok .chat-message.customer > div { background: #263640; }
+.chat-message > div span { display: block; min-height: .2em; }
+.chat-message small { display: block; margin: 4px 4px 0; color: #94a0a7; font-size: 7px; }
+.chat-message.customer small { text-align: right; }
+.chat-system { width: fit-content; max-width: 90%; margin: 7px auto 12px; border-radius: 99px; padding: 6px 9px; color: #71838e; background: #e8edef; font-size: 7px; text-align: center; }
+.chat-composer { display: grid; grid-template-columns: 32px minmax(0,1fr) 34px; align-items: end; gap: 7px; border-top: 1px solid var(--line); padding: 9px 10px; background: white; }
+.chat-composer > button:first-child { width: 31px; height: 31px; border: 1px solid var(--line); border-radius: 50%; color: #66808e; background: #f5f8f9; cursor: pointer; }
+.chat-composer textarea { max-height: 75px; resize: none; border: 1px solid var(--line); outline: 0; border-radius: 17px; padding: 8px 11px; color: var(--ink); background: #f7f9fa; font-size: 10px; }
+.send-round { width: 33px; height: 33px; border: 0; border-radius: 50%; color: white; background: var(--teal); cursor: pointer; }
+.send-round:disabled { opacity: .35; cursor: default; }
+.scenario-list { display: grid; gap: 9px; margin-top: 18px; }
+.scenario-list article { overflow: hidden; border: 1px solid var(--line); border-radius: 10px; background: #fbfcfd; }
+.scenario-list article > div { padding: 10px 11px 8px; }
+.scenario-list article > div span, .scenario-list article > div b { display: block; }
+.scenario-list article > div span { color: var(--teal); font-size: 7px; font-weight: 850; text-transform: uppercase; letter-spacing: .08em; }
+.scenario-list article > div b { margin-top: 4px; font-size: 10px; }
+.scenario-list article > button { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 8px; border: 0; border-top: 1px solid var(--line); padding: 8px 10px; color: #607581; text-align: left; background: white; cursor: pointer; font-size: 8px; }
+.scenario-list article > button:hover:not(:disabled) { color: var(--teal); background: #f8fcfb; }
+.scenario-list article > button:disabled { cursor: default; opacity: .45; }
+.scenario-list em { color: #8b99a1; font-size: 7px; font-style: normal; white-space: nowrap; }
+.faq-drawer-button { display: flex; width: 100%; align-items: center; justify-content: space-between; border: 1px solid var(--line); border-radius: 10px; margin-top: 13px; padding: 10px 11px; text-align: left; background: white; cursor: pointer; }
+.faq-drawer-button b, .faq-drawer-button small { display: block; }
+.faq-drawer-button b { font-size: 10px; }
+.faq-drawer-button small { margin-top: 3px; color: #8997a0; font-size: 8px; }
+.faq-drawer-button em { color: var(--teal); font-size: 16px; font-style: normal; }
+.faq-test-list { max-height: 270px; overflow-y: auto; border: 1px solid var(--line); border-top: 0; border-radius: 0 0 10px 10px; }
+.faq-test-list button { display: grid; width: 100%; grid-template-columns: 24px 1fr; gap: 7px; border: 0; border-top: 1px solid #eef2f4; padding: 8px 9px; color: #607581; text-align: left; background: #fbfcfd; cursor: pointer; font-size: 8px; }
+.faq-test-list button:hover:not(:disabled) { color: var(--teal); background: white; }
+.faq-test-list button:disabled { opacity: .45; }
+.faq-test-list span { color: #9aa6ad; font-size: 7px; }
+.scenario-note { margin-top: 15px; border: 1px solid #eadfc8; border-radius: 10px; padding: 11px; background: #fffaf1; }
+.scenario-note b { color: #8c641f; font-size: 9px; }
+.scenario-note p { margin: 5px 0 0; color: #856f4d; font-size: 8px; line-height: 1.55; }

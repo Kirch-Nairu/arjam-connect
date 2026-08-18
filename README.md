@@ -1,33 +1,74 @@
 # Arjam Connect
 
-Minimal working customer inquiry and chatbot prototype for **Arjam Travel & Tours**.
+Presentation-grade minimum working prototype for **Arjam Travel & Tours**.
 
-## Prototype roles
+Arjam Connect demonstrates how customer inquiries from Facebook Messenger, Instagram, and TikTok can be normalized into one travel inquiry workspace with automated FAQ handling, structured lead qualification, and human agent takeover.
 
-- **Arjam Dashboard** — unified inbox, inquiry details, FAQ coverage, chatbot status, human takeover, and dashboard metrics.
-- **Demo Tester** — customer-side simulator for Facebook Messenger, Instagram, and TikTok channel adapters.
+## Prototype boundary
 
-## Working prototype features
+This repository deliberately separates **working application behavior** from **production social API authorization**.
 
-- Two-role entry flow
-- Cross-window live updates with `BroadcastChannel` + `localStorage`
-- Simulated Facebook Messenger, Instagram, and TikTok adapters
-- 15 FAQ/intents including pricing, packages, Bohol, Panglao, pickup, accommodation, booking, payment, groups, and human handoff
-- English + common Filipino/Bisaya shorthand keywords such as `hm`, `pila`, `pax`
-- Minimal inquiry extraction for destination, guest counts, adults/children, and origin
-- Automatic status progression
-- Human agent takeover / return-to-AI flow
-- Seeded dashboard conversations for presentation
-- No fabricated package prices, payment accounts, availability, or booking confirmations
+Working in this prototype:
+
+- role-based demo login
+- Arjam client operations dashboard
+- unified inbox with search and workflow filters
+- simulated Messenger, Instagram, and TikTok inbound conversations
+- 18 editable FAQ categories
+- conversational FAQ matching
+- multi-turn travel inquiry qualification
+- destination, travel date, guest count, origin, accommodation, transport, and phone extraction
+- qualified lead state
+- human-agent handoff and return to automation
+- customer directory
+- inquiry analytics
+- cross-window live synchronization using `BroadcastChannel` + browser storage events
+- deterministic seeded demo reset
+
+Not represented as production-ready:
+
+- Meta production authorization
+- TikTok Business Messaging production authorization
+- real customer data persistence
+- production authentication
+- payment processing
+- booking confirmation
+- live package inventory
+
+## Demo accounts
+
+### Arjam Operations
+
+- Email: `arjam@demo.local`
+- Password: `arjam2026`
+
+### Demo Tester
+
+- Email: `tester@demo.local`
+- Password: `demo2026`
+
+The login screen also provides a one-click seeded demo access option.
+
+## Recommended client demo
+
+1. Open **Arjam Operations** in one browser window.
+2. Open **Demo Tester** in a second window.
+3. Start a TikTok simulation.
+4. Send: `Hi, how much is a Bohol package?`
+5. Send: `5 pax`
+6. Send: `September 20`
+7. Show the Arjam inbox automatically capturing and qualifying the inquiry.
+8. From the tester, send: `I want to speak with a human agent.`
+9. Show **Needs human** on the Arjam side.
+10. Click **Take over**, reply from Arjam, and show that response on the tester side.
 
 ## Stack
 
 - Next.js 16
 - React 19
 - TypeScript
-- CSS (dependency-minimal prototype)
-
-The prototype intentionally keeps persistence client-side so the presentation does not depend on external API keys. The storage and messaging interfaces can later be replaced with Supabase/PostgreSQL and production Meta/TikTok adapters.
+- CSS design system with no external UI dependency
+- browser-local prototype persistence
 
 ## Run locally
 
@@ -36,6 +77,24 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:3000`.
+Then open `http://localhost:3000`.
 
-For the strongest demo, open **Arjam Dashboard** and **Demo Tester** in two side-by-side browser windows on the same origin.
+## Architecture direction
+
+The prototype uses one normalized conversation model. Production channel adapters can later map Meta and TikTok webhook events into that model without rewriting the inbox, chatbot workflow, or customer state.
+
+```text
+Messenger / Instagram / TikTok
+             │
+      channel adapters
+             │
+             ▼
+ normalized conversation model
+             │
+     ┌───────┼────────┐
+     ▼       ▼        ▼
+  inbox   chatbot   inquiry
+                   workflow
+```
+
+For production, replace browser persistence with a server-side store such as PostgreSQL/Supabase, replace demo authentication with real Auth/RBAC, and connect approved social messaging adapters.
