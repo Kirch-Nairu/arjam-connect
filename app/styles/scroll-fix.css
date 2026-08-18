@@ -1,0 +1,65 @@
+/* Scroll ownership fixes for long conversation histories. */
+.inbox-grid-clean {
+  min-height: 0;
+  max-height: calc(100dvh - 68px);
+}
+
+.thread-list,
+.conversation-clean,
+.conversation-details-clean {
+  min-height: 0;
+  height: 100%;
+}
+
+.thread-list,
+.conversation-clean {
+  overflow: hidden;
+}
+
+.threads,
+.message-list-clean,
+.conversation-details-clean,
+.customer-chat-messages {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: #b8c1c8 transparent;
+}
+
+.threads::-webkit-scrollbar,
+.message-list-clean::-webkit-scrollbar,
+.conversation-details-clean::-webkit-scrollbar,
+.customer-chat-messages::-webkit-scrollbar {
+  width: 8px;
+}
+
+.threads::-webkit-scrollbar-thumb,
+.message-list-clean::-webkit-scrollbar-thumb,
+.conversation-details-clean::-webkit-scrollbar-thumb,
+.customer-chat-messages::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: #b8c1c8;
+  background-clip: padding-box;
+}
+
+.conversation-clean-header,
+.reply-box,
+.customer-chat-header,
+.customer-composer-clean {
+  flex: 0 0 auto;
+}
+
+@media (max-width: 780px) {
+  .inbox-grid-clean {
+    max-height: none;
+  }
+
+  .thread-list,
+  .conversation-clean,
+  .conversation-details-clean {
+    height: auto;
+  }
+}
